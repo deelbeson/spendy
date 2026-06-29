@@ -1,0 +1,31 @@
+{% for group in items_with_accounts %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+  <div class="px-6 py-4 border-b border-gray-100">
+    <h3 class="text-base font-semibold text-gray-900">{{ group.item.institution_name or "Unknown Bank" }}</h3>
+    <p class="text-xs text-gray-400 mt-0.5">{{ group.accounts | length }} account{% if group.accounts | length != 1 %}s{% endif %}</p>
+  </div>
+  <div class="divide-y divide-gray-50">
+    {% for account in group.accounts %}
+    <div class="px-6 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-900">{{ account.name }}</p>
+        <p class="text-xs text-gray-400 mt-0.5 capitalize">
+          {{ account.subtype or account.type }}
+          {% if account.mask %}&bull;&bull;&bull;&bull; {{ account.mask }}{% endif %}
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-base font-bold {% if account.type == 'credit' %}text-orange-600{% else %}text-gray-900{% endif %}">
+          ${{ "%.2f"|format(account.current_balance or 0) }}
+        </p>
+        {% if account.available_balance is not none %}
+        <p class="text-xs text-gray-400">${{ "%.2f"|format(account.available_balance) }} avail.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<p class="text-gray-400 text-sm text-center py-8">No accounts connected</p>
+{% endfor %}

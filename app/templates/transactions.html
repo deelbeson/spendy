@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions — Spendy{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Transactions</h1>
+    <p class="text-gray-500 text-sm mt-1">Browse and categorize your spending</p>
+  </div>
+  <a
+    href="/transactions/sync"
+    class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition"
+  >
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    Sync Transactions
+  </a>
+</div>
+
+<!-- Filter Bar -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
+  <form
+    id="filter-form"
+    hx-get="/transactions/rows"
+    hx-trigger="change from:select, change from:input[type=date]"
+    hx-target="#transaction-table-body"
+    hx-indicator="#table-spinner"
+    class="flex flex-wrap gap-3 items-end"
+  >
+    <div class="flex flex-col gap-1 min-w-0">
+      <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">From</label>
+      <input
+        type="date"
+        name="date_from"
+        value="{{ date_from }}"
+        class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1 min-w-0">
+      <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">To</label>
+      <input
+        type="date"
+        name="date_to"
+        value="{{ date_to }}"
+        class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+      />
+    </div>
+
+    <div class="flex flex-col gap-1 min-w-0">
+      <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</label>
+      <select
+        name="category_id"
+        class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+      >
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if selected_category_id == cat.id %}selected{% endif %}>
+          {{ cat.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex flex-col gap-1 min-w-0">
+      <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Account</label>
+      <select
+        name="account_id"
+        class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+      >
+        <option value="">All Accounts</option>
+        {% for acct in accounts %}
+        <option value="{{ acct.id }}" {% if selected_account_id == acct.id %}selected{% endif %}>
+          {{ acct.name }}{% if acct.mask %} (&bull;&bull;{{ acct.mask }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex items-center">
+      <span id="table-spinner" class="htmx-indicator text-emerald-500 ml-2">
+        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </span>
+    </div>
+  </form>
+</div>
+
+<!-- Transactions Table -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-100">
+      <thead class="bg-gray-50">
+        <tr>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Date</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Merchant</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Account</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Amount</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell w-24">Status</th>
+        </tr>
+      </thead>
+      <tbody id="transaction-table-body" class="bg-white divide-y divide-gray-50">
+        {% include "partials/transaction_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Spendy{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline-block; }
+    .htmx-request.htmx-indicator { display: inline-block; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-gray-50">
+  <div class="flex h-full min-h-screen">
+
+    <!-- Mobile menu button -->
+    <div class="lg:hidden fixed top-0 left-0 z-50 p-4">
+      <button
+        onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')"
+        class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 bg-white shadow hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+      >
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Sidebar overlay for mobile -->
+    <div
+      id="sidebar-overlay"
+      class="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50 hidden"
+      onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden')"
+    ></div>
+
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-slate-900 text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
+    >
+      <!-- Logo -->
+      <div class="flex items-center h-16 px-6 border-b border-slate-700">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <span class="text-xl font-bold text-white">Spendy</span>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+        <a
+          href="/"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+            {% if request.url.path == '/' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Dashboard
+        </a>
+
+        <a
+          href="/transactions"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+            {% if request.url.path.startswith('/transactions') %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Transactions
+        </a>
+
+        <a
+          href="/accounts"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+            {% if request.url.path.startswith('/accounts') %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          Accounts
+        </a>
+
+        <!-- Sync All Button -->
+        <div class="pt-4">
+          <button
+            hx-post="/plaid/sync"
+            hx-indicator="#sync-spinner"
+            hx-on::after-request="if(event.detail.successful) { window.location.reload(); }"
+            class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+          >
+            <span id="sync-spinner" class="htmx-indicator">
+              <svg class="w-5 h-5 animate-spin text-emerald-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </span>
+            <svg class="w-5 h-5 flex-shrink-0 sync-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Sync All
+          </button>
+        </div>
+      </nav>
+
+      <!-- User info at bottom -->
+      <div class="border-t border-slate-700 px-4 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              {% if user %}
+              <p class="text-sm font-medium text-white">{{ user.username }}</p>
+              {% endif %}
+              <p class="text-xs text-slate-400">Family Finance</p>
+            </div>
+          </div>
+          <a href="/logout" class="text-slate-400 hover:text-white transition-colors" title="Logout">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <!-- Top bar (mobile) -->
+      <div class="lg:hidden h-16"></div>
+
+      <!-- Flash messages -->
+      {% if request.session.get('flash_success') %}
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mx-6 mt-4 rounded" id="flash-msg">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-emerald-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <p class="text-sm text-emerald-700">{{ request.session.pop('flash_success') }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Page content -->
+      <main class="flex-1 px-4 sm:px-6 py-6">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="py-4 px-6 text-center text-xs text-gray-400 border-t border-gray-200">
+        Spendy &mdash; Family Finance Dashboard
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // Auto-dismiss flash messages
+    setTimeout(() => {
+      const flash = document.getElementById('flash-msg');
+      if (flash) flash.remove();
+    }, 4000);
+
+    // Close mobile sidebar when clicking nav links
+    document.querySelectorAll('#sidebar a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+      });
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

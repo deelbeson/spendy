@@ -1,0 +1,98 @@
+{% for txn in transactions %}
+<tr class="hover:bg-gray-50 transition-colors {% if txn.pending %}opacity-60{% endif %}" id="txn-row-{{ txn.id }}">
+  <!-- Date -->
+  <td class="px-4 py-3 whitespace-nowrap">
+    <span class="text-sm {% if txn.pending %}italic text-gray-400{% else %}text-gray-700{% endif %}">
+      {{ txn.date.strftime('%b %d, %Y') }}
+    </span>
+  </td>
+
+  <!-- Merchant -->
+  <td class="px-4 py-3">
+    <div class="flex items-center gap-2 min-w-0">
+      {% if txn.logo_url %}
+      <img
+        src="{{ txn.logo_url }}"
+        alt=""
+        class="w-6 h-6 rounded-full object-cover flex-shrink-0"
+        onerror="this.style.display='none';"
+      />
+      {% endif %}
+      <div class="min-w-0">
+        <p class="text-sm font-medium text-gray-900 truncate max-w-xs {% if txn.pending %}italic{% endif %}">
+          {{ txn.merchant_name or txn.name }}
+        </p>
+        {% if txn.merchant_name and txn.merchant_name != txn.name %}
+        <p class="text-xs text-gray-400 truncate max-w-xs">{{ txn.name }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </td>
+
+  <!-- Account -->
+  <td class="px-4 py-3 hidden md:table-cell">
+    <span class="text-sm text-gray-600">
+      {{ txn.account.name }}
+      {% if txn.account.mask %}
+      <span class="text-gray-400">&bull;&bull;{{ txn.account.mask }}</span>
+      {% endif %}
+    </span>
+  </td>
+
+  <!-- Category dropdown -->
+  <td class="px-4 py-3">
+    <form
+      hx-post="/transactions/{{ txn.id }}/category"
+      hx-trigger="change"
+      hx-target="#txn-row-{{ txn.id }}"
+      hx-swap="outerHTML"
+      class="m-0"
+    >
+      <select
+        name="category_id"
+        class="text-xs px-2 py-1 rounded-full border-0 font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400 transition"
+        style="background-color: {{ txn.category.color if txn.category else '#6B7280' }}20; color: {{ txn.category.color if txn.category else '#6B7280' }};"
+      >
+        {% for cat in categories %}
+        <option
+          value="{{ cat.id }}"
+          {% if txn.category_id == cat.id %}selected{% endif %}
+          style="background-color: white; color: #374151;"
+        >
+          {{ cat.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+  </td>
+
+  <!-- Amount -->
+  <td class="px-4 py-3 whitespace-nowrap text-right">
+    <span class="text-sm font-semibold {% if txn.amount < 0 %}text-emerald-600{% else %}text-red-600{% endif %}">
+      {% if txn.amount < 0 %}+{% else %}-{% endif %}${{ "%.2f"|format(txn.amount|abs) }}
+    </span>
+  </td>
+
+  <!-- Status -->
+  <td class="px-4 py-3 hidden lg:table-cell">
+    {% if txn.pending %}
+    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+      Pending
+    </span>
+    {% else %}
+    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+      Posted
+    </span>
+    {% endif %}
+  </td>
+</tr>
+{% else %}
+<tr>
+  <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+    <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+    <p class="text-sm font-medium">No transactions match your filters</p>
+  </td>
+</tr>
+{% endfor %}

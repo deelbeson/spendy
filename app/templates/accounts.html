@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts — Spendy{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Accounts</h1>
+    <p class="text-gray-500 text-sm mt-1">Manage your connected bank accounts</p>
+  </div>
+  <button
+    onclick="openPlaidLink()"
+    class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition shadow-sm"
+  >
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+    Connect a Bank Account
+  </button>
+</div>
+
+{% if items_with_accounts %}
+<!-- Institutions -->
+<div class="space-y-6">
+  {% for group in items_with_accounts %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Institution header -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-base font-semibold text-gray-900">{{ group.item.institution_name or "Unknown Bank" }}</h3>
+          <p class="text-xs text-gray-400">{{ group.accounts | length }} account{% if group.accounts | length != 1 %}s{% endif %} connected</p>
+        </div>
+      </div>
+      <div class="text-xs text-gray-400">
+        Connected {{ group.item.created_at.strftime('%b %d, %Y') }}
+      </div>
+    </div>
+
+    <!-- Accounts list -->
+    <div class="divide-y divide-gray-50">
+      {% for account in group.accounts %}
+      <div class="px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <!-- Account type indicator -->
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center
+            {% if account.type == 'depository' %}bg-emerald-100
+            {% elif account.type == 'credit' %}bg-orange-100
+            {% elif account.type == 'investment' %}bg-purple-100
+            {% else %}bg-blue-100{% endif %}">
+            {% if account.type == 'depository' %}
+            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            {% elif account.type == 'credit' %}
+            <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            {% elif account.type == 'investment' %}
+            <svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            {% else %}
+            <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            {% endif %}
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ account.name }}</p>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-xs text-gray-400 capitalize">{{ account.subtype or account.type }}</span>
+              {% if account.mask %}
+              <span class="text-xs text-gray-300">&bull;</span>
+              <span class="text-xs text-gray-400">&bull;&bull;&bull;&bull; {{ account.mask }}</span>
+              {% endif %}
+              <span class="text-xs text-gray-300">&bull;</span>
+              <span class="text-xs text-gray-400">{{ account.currency }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance -->
+        <div class="text-right">
+          <p class="text-base font-bold
+            {% if account.type == 'credit' %}text-orange-600
+            {% else %}text-gray-900{% endif %}">
+            ${{ "%.2f"|format(account.current_balance or 0) }}
+          </p>
+          {% if account.available_balance is not none %}
+          <p class="text-xs text-gray-400 mt-0.5">
+            ${{ "%.2f"|format(account.available_balance) }} available
+          </p>
+          {% endif %}
+          {% if account.type == 'credit' %}
+          <p class="text-xs text-orange-500 mt-0.5">Amount owed</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+  <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+    <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  </div>
+  <h3 class="text-lg font-semibold text-gray-900 mb-2">No accounts connected</h3>
+  <p class="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+    Connect your bank accounts using Plaid to start tracking your family's spending and income automatically.
+  </p>
+  <button
+    onclick="openPlaidLink()"
+    class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition shadow-sm"
+  >
+    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+    Connect Your First Bank Account
+  </button>
+
+  <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-xl mx-auto">
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <p class="text-xs font-semibold text-gray-700 mb-1">Secure</p>
+      <p class="text-xs text-gray-500">Bank-level encryption. Plaid never stores your credentials.</p>
+    </div>
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <p class="text-xs font-semibold text-gray-700 mb-1">Automatic</p>
+      <p class="text-xs text-gray-500">Transactions sync automatically. Categories assigned instantly.</p>
+    </div>
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <p class="text-xs font-semibold text-gray-700 mb-1">Complete</p>
+      <p class="text-xs text-gray-500">Connect checking, savings, credit cards, and investments.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Loading overlay -->
+<div id="plaid-loading" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+  <div class="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-xl">
+    <svg class="w-10 h-10 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <p class="text-sm font-medium text-gray-700">Syncing your accounts...</p>
+    <p class="text-xs text-gray-400">This may take a moment for initial sync</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+async function openPlaidLink() {
+  try {
+    const resp = await fetch('/plaid/link-token', { method: 'POST' });
+    if (!resp.ok) {
+      const err = await resp.json();
+      alert('Error creating link token: ' + (err.error || 'Unknown error'));
+      return;
+    }
+    const { link_token } = await resp.json();
+
+    const handler = Plaid.create({
+      token: link_token,
+      onSuccess: async (public_token, metadata) => {
+        document.getElementById('plaid-loading').classList.remove('hidden');
+        try {
+          const exchangeResp = await fetch('/plaid/exchange-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              public_token: public_token,
+              institution_name: metadata.institution ? metadata.institution.name : 'Unknown Bank',
+              institution_id: metadata.institution ? metadata.institution.institution_id : '',
+            }),
+          });
+          if (!exchangeResp.ok) {
+            const err = await exchangeResp.json();
+            alert('Error connecting account: ' + (err.error || 'Unknown error'));
+          }
+        } catch (e) {
+          console.error('Exchange error:', e);
+          alert('Error connecting account. Please try again.');
+        } finally {
+          document.getElementById('plaid-loading').classList.add('hidden');
+          window.location.reload();
+        }
+      },
+      onExit: (err, metadata) => {
+        if (err) {
+          console.error('Plaid Link error:', err);
+        }
+      },
+    });
+
+    handler.open();
+  } catch (e) {
+    console.error('Error opening Plaid Link:', e);
+    alert('Error opening Plaid Link. Please check your configuration.');
+  }
+}
+</script>
+{% endblock %}
