@@ -6,7 +6,7 @@ psycopg2-binary==2.9.10
 jinja2==3.1.5
 python-multipart==0.0.20
 python-dotenv==1.0.1
-passlib[bcrypt]==1.7.4
-plaid-python==26.3.0
+bcrypt==4.2.1
+plaid-python==40.1.0
 pydantic-settings==2.7.0
 itsdangerous==2.2.0
