@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 # Plaid environment mapping
 PLAID_ENV_URLS = {
     "sandbox": "https://sandbox.plaid.com",
-    "development": "https://development.plaid.com",
     "production": "https://production.plaid.com",
 }
 
@@ -75,7 +74,7 @@ CATEGORY_MAPPING = {
 
 
 def get_plaid_client() -> plaid_api.PlaidApi:
-    env_url = PLAID_ENV_URLS.get(settings.plaid_env.lower(), PLAID_ENV_URLS["sandbox"])
+    env_url = PLAID_ENV_URLS.get(settings.plaid_env.lower(), PLAID_ENV_URLS["production"])
     configuration = Configuration(
         host=env_url,
         api_key={
