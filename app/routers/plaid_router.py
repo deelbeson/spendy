@@ -82,18 +82,26 @@ async def plaid_exchange_token(request: Request, db: Session = Depends(get_db)):
         # Fetch and save accounts
         accounts_data = get_accounts(access_token, client)
         for acct in accounts_data:
-            balances = acct.get("balances", {})
+            acct_dict = acct.to_dict() if hasattr(acct, "to_dict") else acct
+            balances = acct_dict.get("balances") or {}
+            # Plaid returns AccountType/AccountSubtype enums — convert to plain strings
+            acct_type = acct_dict.get("type", "depository")
+            acct_subtype = acct_dict.get("subtype")
+            if hasattr(acct_type, "value"):
+                acct_type = acct_type.value
+            if hasattr(acct_subtype, "value"):
+                acct_subtype = acct_subtype.value
             account = Account(
-                plaid_account_id=acct["account_id"],
+                plaid_account_id=acct_dict["account_id"],
                 item_id=plaid_item.id,
-                name=acct["name"],
-                official_name=acct.get("official_name"),
-                type=acct.get("type", "depository"),
-                subtype=acct.get("subtype"),
+                name=acct_dict["name"],
+                official_name=acct_dict.get("official_name"),
+                type=str(acct_type) if acct_type else "depository",
+                subtype=str(acct_subtype) if acct_subtype else None,
                 current_balance=balances.get("current"),
                 available_balance=balances.get("available"),
-                currency=balances.get("iso_currency_code", "USD"),
-                mask=acct.get("mask"),
+                currency=balances.get("iso_currency_code") or "USD",
+                mask=acct_dict.get("mask"),
                 is_active=True,
             )
             db.add(account)
